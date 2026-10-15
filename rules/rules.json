@@ -1,0 +1,201 @@
+[
+  {
+    "name": "openssh",
+    "priority": 100,
+    "pattern": "(?i)SSH-(?:1\\.99|2\\.0|1\\.5)-OpenSSH_(?P<version>\\d+(?:\\.\\d+)+(?:p\\d+)?)(?:\\s+(?P<os_hint>Ubuntu|Debian|FreeBSD|NetBSD|OpenBSD|CentOS|RedHat|Rocky|AlmaLinux|Alpine|Windows|Amazon|Kali|Raspbian))?",
+    "ports": [
+      22
+    ],
+    "protocol": "SSH",
+    "product": "OpenSSH",
+    "version_group": "version",
+    "os_hint_group": "os_hint",
+    "confidence": 0.95
+  },
+  {
+    "name": "nginx",
+    "priority": 96,
+    "pattern": "(?i)nginx/(?P<version>\\d+\\.\\d+(?:\\.\\d+)?)(?:[^\\r\\n]*\\((?P<os_hint>Ubuntu|Debian|FreeBSD|NetBSD|OpenBSD|CentOS|RedHat|Rocky|AlmaLinux|Alpine|Windows|Amazon|Kali|Raspbian)\\))?",
+    "ports": [
+      80,
+      443,
+      8080,
+      8443
+    ],
+    "protocol": "HTTP",
+    "product": "nginx",
+    "version_group": "version",
+    "os_hint_group": "os_hint",
+    "confidence": 0.9
+  },
+  {
+    "name": "apache",
+    "priority": 96,
+    "pattern": "(?i)Apache/(?P<version>\\d+\\.\\d+(?:\\.\\d+)?)(?:[^\\r\\n]*\\((?P<os_hint>Ubuntu|Debian|FreeBSD|NetBSD|OpenBSD|CentOS|RedHat|Rocky|AlmaLinux|Alpine|Windows|Amazon|Kali|Raspbian)\\))?",
+    "ports": [
+      80,
+      443,
+      8080
+    ],
+    "protocol": "HTTP",
+    "product": "Apache",
+    "version_group": "version",
+    "os_hint_group": "os_hint",
+    "confidence": 0.9
+  },
+  {
+    "name": "jetty",
+    "priority": 96,
+    "pattern": "(?i)Jetty/(?P<version>\\d+\\.\\d+(?:\\.\\d+)?)",
+    "ports": [
+      8080,
+      8443
+    ],
+    "protocol": "HTTP",
+    "product": "Jetty",
+    "version_group": "version",
+    "confidence": 0.85
+  },
+  {
+    "name": "microsoft-iis",
+    "priority": 96,
+    "pattern": "(?i)Microsoft-IIS/(?P<version>\\d+\\.\\d+(?:\\.\\d+)?)",
+    "ports": [
+      80,
+      443
+    ],
+    "protocol": "HTTP",
+    "product": "Microsoft-IIS",
+    "version_group": "version",
+    "confidence": 0.9
+  },
+  {
+    "name": "proftpd",
+    "priority": 92,
+    "pattern": "(?i)ProFTPD[\\s/]+(?P<version>\\d+\\.\\d+(?:\\.\\d+)?)",
+    "ports": [
+      21
+    ],
+    "protocol": "FTP",
+    "product": "ProFTPD",
+    "version_group": "version",
+    "confidence": 0.9
+  },
+  {
+    "name": "vsftpd",
+    "priority": 92,
+    "pattern": "(?i)vsftpd[\\s/]+(?P<version>\\d+\\.\\d+(?:\\.\\d+)?)",
+    "ports": [
+      21
+    ],
+    "protocol": "FTP",
+    "product": "vsFTPd",
+    "version_group": "version",
+    "confidence": 0.9
+  },
+  {
+    "name": "mysql-handshake",
+    "priority": 94,
+    "pattern": "\\x0a(?P<version>\\d+\\.\\d+\\.\\d+)",
+    "ports": [
+      3306
+    ],
+    "protocol": "MySQL",
+    "product": "MySQL",
+    "version_group": "version",
+    "confidence": 0.9
+  },
+  {
+    "name": "pure-ftpd",
+    "priority": 85,
+    "pattern": "(?i)Pure-FTPd",
+    "ports": [
+      21
+    ],
+    "protocol": "FTP",
+    "product": "Pure-FTPd",
+    "confidence": 0.85
+  },
+  {
+    "name": "mysql-text",
+    "priority": 84,
+    "pattern": "(?i)mysql[^\\d\\r\\n]{0,24}(?P<version>\\d+\\.\\d+\\.\\d+)",
+    "ports": [
+      3306
+    ],
+    "protocol": "MySQL",
+    "product": "MySQL",
+    "version_group": "version",
+    "confidence": 0.85
+  },
+  {
+    "name": "mysql-version-label",
+    "priority": 84,
+    "pattern": "(?i)(?P<version>\\d+\\.\\d+\\.\\d+)[^\\r\\n]{0,24}mysql",
+    "ports": [
+      3306
+    ],
+    "protocol": "MySQL",
+    "product": "MySQL",
+    "version_group": "version",
+    "confidence": 0.85
+  },
+  {
+    "name": "redis",
+    "priority": 70,
+    "pattern": "(?m)^(?:\\+PONG\\b|-NOAUTH\\b|-ERR\\b)",
+    "ports": [
+      6379
+    ],
+    "protocol": "Redis",
+    "product": "Redis",
+    "confidence": 0.7
+  },
+  {
+    "name": "tls",
+    "priority": 60,
+    "pattern": "^\\x16\\x03[\\x00-\\x04]",
+    "ports": [
+      443
+    ],
+    "protocol": "TLS",
+    "product": "",
+    "confidence": 0.6
+  },
+  {
+    "name": "ftp-generic",
+    "priority": 55,
+    "pattern": "(?i)^220[\\s-][^\\r\\n]*(?:ftp|filezilla)",
+    "ports": [
+      21
+    ],
+    "protocol": "FTP",
+    "product": "",
+    "confidence": 0.55
+  },
+  {
+    "name": "ssh-generic",
+    "priority": 50,
+    "pattern": "(?i)^SSH-(?:1\\.99|2\\.0|1\\.5|1\\.0)\\b",
+    "ports": [
+      22
+    ],
+    "protocol": "SSH",
+    "product": "",
+    "confidence": 0.55
+  },
+  {
+    "name": "http-generic",
+    "priority": 40,
+    "pattern": "(?i)^HTTP/(?:1\\.\\d|2) \\d{3}\\b",
+    "ports": [
+      80,
+      443,
+      8080,
+      8443
+    ],
+    "protocol": "HTTP",
+    "product": "",
+    "confidence": 0.5
+  }
+]

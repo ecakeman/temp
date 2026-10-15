@@ -24,6 +24,11 @@ type Rule struct {
 	VersionGroup string  `json:"version_group,omitempty"`
 	OSHintGroup  string  `json:"os_hint_group,omitempty"`
 	Confidence   float64 `json:"confidence"`
+	// Source selects the evidence a pattern may see. Empty means banner.
+	// http_server is only the Server header of a valid HTTP response.
+	// http_status is only that response's status line.
+	// tls is the token TLS after the record structure checks out.
+	Source string `json:"source,omitempty"`
 }
 
 type compiledRule struct {
@@ -65,6 +70,7 @@ func Load(path string) (*Engine, error) {
 		if err := validateRule(rule, seen); err != nil {
 			return nil, fmt.Errorf("rule %d (%s): %w", i, rule.Name, err)
 		}
+		rule.Source = canonicalSource(rule.Source)
 		seen[rule.Name] = struct{}{}
 		re, err := regexp.Compile(rule.Pattern)
 		if err != nil {
@@ -97,6 +103,9 @@ func validateRule(rule Rule, seen map[string]struct{}) error {
 	if rule.Confidence < 0 || rule.Confidence > 1 {
 		return fmt.Errorf("confidence %v is outside [0,1]", rule.Confidence)
 	}
+	if _, ok := canonicalSourceOK(rule.Source); !ok {
+		return fmt.Errorf("invalid source %q", rule.Source)
+	}
 	for _, port := range rule.Ports {
 		if port < 1 || port > 65535 {
 			return fmt.Errorf("invalid hint port %d", port)
@@ -122,13 +131,19 @@ func (e *Engine) Identify(ip string, port int, banner string) (res model.Result)
 		}
 	}()
 	normalized := Normalize(banner)
+	httpMsg := ParseHTTP(normalized)
+	tlsOK := ValidTLSRecord(normalized)
 	bestScore := -1
 	bestPort := false
 	var best *compiledRule
 	var bestMatch []string
 	for i := range e.rules {
 		cr := &e.rules[i]
-		match := cr.re.FindStringSubmatch(normalized)
+		text, ok := evidence(cr.rule.Source, normalized, httpMsg, tlsOK)
+		if !ok {
+			continue
+		}
+		match := cr.re.FindStringSubmatch(text)
 		if match == nil {
 			continue
 		}
@@ -151,6 +166,46 @@ func (e *Engine) Identify(ip string, port int, banner string) (res model.Result)
 		Version:    capture(best.re, bestMatch, best.rule.VersionGroup),
 		OSHint:     canonicalOS(capture(best.re, bestMatch, best.rule.OSHintGroup)),
 		Confidence: best.rule.Confidence,
+	}
+}
+
+func canonicalSource(source string) string {
+	if source == "" {
+		return "banner"
+	}
+	return source
+}
+
+func canonicalSourceOK(source string) (string, bool) {
+	switch source {
+	case "", "banner", "http_server", "http_status", "tls":
+		return canonicalSource(source), true
+	default:
+		return "", false
+	}
+}
+
+func evidence(source, banner string, httpMsg HTTPMessage, tlsOK bool) (string, bool) {
+	switch canonicalSource(source) {
+	case "banner":
+		return banner, true
+	case "http_server":
+		if !httpMsg.OK || httpMsg.Conflict || httpMsg.Server == "" {
+			return "", false
+		}
+		return httpMsg.Server, true
+	case "http_status":
+		if !httpMsg.OK {
+			return "", false
+		}
+		return httpMsg.StatusLine, true
+	case "tls":
+		if !tlsOK {
+			return "", false
+		}
+		return "TLS", true
+	default:
+		return "", false
 	}
 }
 

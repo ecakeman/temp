@@ -5,12 +5,14 @@ root = Path(__file__).resolve().parents[1]
 os_hint = "Ubuntu|Debian|FreeBSD|NetBSD|OpenBSD|CentOS|RedHat|Rocky|AlmaLinux|Alpine|Windows|Amazon|Kali|Raspbian"
 version = r"(?P<version>\d+\.\d+(?:\.\d+)?)"
 os_group = f"(?P<os_hint>{os_hint})"
+product_tail = rf"(?:\s+\({os_group}\))?"
 
 rules = [
     {
         "name": "openssh",
         "priority": 100,
-        "pattern": rf"(?i)SSH-(?:1\.99|2\.0|1\.5)-OpenSSH_(?P<version>\d+(?:\.\d+)+(?:p\d+)?)(?:\s+{os_group})?",
+        "source": "banner",
+        "pattern": rf"(?i)^SSH-(?:1\.99|2\.0|1\.5)-OpenSSH_(?P<version>\d+(?:\.\d+)+(?:p\d+)?)(?:\s+{os_group})?",
         "ports": [22],
         "protocol": "SSH",
         "product": "OpenSSH",
@@ -21,7 +23,8 @@ rules = [
     {
         "name": "nginx",
         "priority": 96,
-        "pattern": rf"(?i)nginx/{version}(?:[^\r\n]*\({os_group}\))?",
+        "source": "http_server",
+        "pattern": rf"(?i)^nginx/{version}{product_tail}",
         "ports": [80, 443, 8080, 8443],
         "protocol": "HTTP",
         "product": "nginx",
@@ -32,7 +35,8 @@ rules = [
     {
         "name": "apache",
         "priority": 96,
-        "pattern": rf"(?i)Apache/{version}(?:[^\r\n]*\({os_group}\))?",
+        "source": "http_server",
+        "pattern": rf"(?i)^Apache/{version}{product_tail}",
         "ports": [80, 443, 8080],
         "protocol": "HTTP",
         "product": "Apache",
@@ -43,7 +47,8 @@ rules = [
     {
         "name": "jetty",
         "priority": 96,
-        "pattern": rf"(?i)Jetty/{version}",
+        "source": "http_server",
+        "pattern": rf"(?i)^Jetty/{version}",
         "ports": [8080, 8443],
         "protocol": "HTTP",
         "product": "Jetty",
@@ -53,7 +58,8 @@ rules = [
     {
         "name": "microsoft-iis",
         "priority": 96,
-        "pattern": rf"(?i)Microsoft-IIS/{version}",
+        "source": "http_server",
+        "pattern": rf"(?i)^Microsoft-IIS/{version}",
         "ports": [80, 443],
         "protocol": "HTTP",
         "product": "Microsoft-IIS",
@@ -63,7 +69,8 @@ rules = [
     {
         "name": "proftpd",
         "priority": 92,
-        "pattern": r"(?i)ProFTPD[\s/]+(?P<version>\d+\.\d+(?:\.\d+)?)",
+        "source": "banner",
+        "pattern": r"(?i)^220[\s-]+ProFTPD[\s/]+(?P<version>\d+\.\d+(?:\.\d+)?)",
         "ports": [21],
         "protocol": "FTP",
         "product": "ProFTPD",
@@ -73,7 +80,8 @@ rules = [
     {
         "name": "vsftpd",
         "priority": 92,
-        "pattern": r"(?i)vsftpd[\s/]+(?P<version>\d+\.\d+(?:\.\d+)?)",
+        "source": "banner",
+        "pattern": r"(?i)^220[\s-]+\(?vsftpd[\s/]+(?P<version>\d+\.\d+(?:\.\d+)?)",
         "ports": [21],
         "protocol": "FTP",
         "product": "vsFTPd",
@@ -83,7 +91,8 @@ rules = [
     {
         "name": "mysql-handshake",
         "priority": 94,
-        "pattern": r"\x0a(?P<version>\d+\.\d+\.\d+)",
+        "source": "banner",
+        "pattern": r"^[\x00-\xff]{4}\x0a(?P<version>\d+\.\d+\.\d+)\x00",
         "ports": [3306],
         "protocol": "MySQL",
         "product": "MySQL",
@@ -93,7 +102,8 @@ rules = [
     {
         "name": "pure-ftpd",
         "priority": 85,
-        "pattern": r"(?i)Pure-FTPd",
+        "source": "banner",
+        "pattern": r"(?i)^220[\s-]+Welcome to Pure-FTPd\b",
         "ports": [21],
         "protocol": "FTP",
         "product": "Pure-FTPd",
@@ -102,17 +112,8 @@ rules = [
     {
         "name": "mysql-text",
         "priority": 84,
-        "pattern": r"(?i)mysql[^\d\r\n]{0,24}(?P<version>\d+\.\d+\.\d+)",
-        "ports": [3306],
-        "protocol": "MySQL",
-        "product": "MySQL",
-        "version_group": "version",
-        "confidence": 0.85,
-    },
-    {
-        "name": "mysql-version-label",
-        "priority": 84,
-        "pattern": r"(?i)(?P<version>\d+\.\d+\.\d+)[^\r\n]{0,24}mysql",
+        "source": "banner",
+        "pattern": r"(?i)^MySQL version (?P<version>\d+\.\d+\.\d+)\b",
         "ports": [3306],
         "protocol": "MySQL",
         "product": "MySQL",
@@ -122,7 +123,8 @@ rules = [
     {
         "name": "redis",
         "priority": 70,
-        "pattern": r"(?m)^(?:\+PONG\b|-NOAUTH\b|-ERR\b)",
+        "source": "banner",
+        "pattern": r"(?i)^(?:\+PONG\b|-NOAUTH\b|-ERR\b|-WRONGPASS\b)",
         "ports": [6379],
         "protocol": "Redis",
         "product": "Redis",
@@ -131,7 +133,8 @@ rules = [
     {
         "name": "tls",
         "priority": 60,
-        "pattern": r"^\x16\x03[\x00-\x04]",
+        "source": "tls",
+        "pattern": r"^TLS$",
         "ports": [443],
         "protocol": "TLS",
         "product": "",
@@ -140,7 +143,8 @@ rules = [
     {
         "name": "ftp-generic",
         "priority": 55,
-        "pattern": r"(?i)^220[\s-][^\r\n]*(?:ftp|filezilla)",
+        "source": "banner",
+        "pattern": r"(?i)^220[\s-][^\r\n]*\b(?:FTP|FileZilla)\b",
         "ports": [21],
         "protocol": "FTP",
         "product": "",
@@ -149,6 +153,7 @@ rules = [
     {
         "name": "ssh-generic",
         "priority": 50,
+        "source": "banner",
         "pattern": r"(?i)^SSH-(?:1\.99|2\.0|1\.5|1\.0)\b",
         "ports": [22],
         "protocol": "SSH",
@@ -158,7 +163,8 @@ rules = [
     {
         "name": "http-generic",
         "priority": 40,
-        "pattern": r"(?i)^HTTP/(?:1\.\d|2) \d{3}\b",
+        "source": "http_status",
+        "pattern": r"(?i)^HTTP/1\.[0-9][ \t]+[1-5][0-9]{2}\b",
         "ports": [80, 443, 8080, 8443],
         "protocol": "HTTP",
         "product": "",
@@ -189,8 +195,32 @@ records = [
     {"ip": "1.2.3.23", "port": 12345, "banner": "QUIT\r\n"},
 ]
 
+expected = [
+    {"ip": "1.2.3.4", "port": 22, "protocol": "SSH", "product": "OpenSSH", "version": "8.9p1", "os_hint": "Ubuntu", "confidence": 0.95},
+    {"ip": "1.2.3.5", "port": 80, "protocol": "HTTP", "product": "nginx", "version": "1.24.0", "os_hint": "", "confidence": 0.9},
+    {"ip": "1.2.3.6", "port": 443, "protocol": "HTTP", "product": "Apache", "version": "2.4.57", "os_hint": "", "confidence": 0.9},
+    {"ip": "1.2.3.7", "port": 3306, "protocol": "MySQL", "product": "MySQL", "version": "8.0.32", "os_hint": "", "confidence": 0.9},
+    {"ip": "1.2.3.8", "port": 6379, "protocol": "Redis", "product": "Redis", "version": "", "os_hint": "", "confidence": 0.7},
+    {"ip": "1.2.3.9", "port": 21, "protocol": "FTP", "product": "ProFTPD", "version": "1.3.7", "os_hint": "", "confidence": 0.9},
+    {"ip": "1.2.3.10", "port": 8080, "protocol": "HTTP", "product": "Jetty", "version": "9.4.51", "os_hint": "", "confidence": 0.85},
+    {"ip": "1.2.3.11", "port": 22, "protocol": "SSH", "product": "OpenSSH", "version": "9.3", "os_hint": "Debian", "confidence": 0.95},
+    {"ip": "1.2.3.12", "port": 80, "protocol": "HTTP", "product": "nginx", "version": "1.18.0", "os_hint": "Ubuntu", "confidence": 0.9},
+    {"ip": "1.2.3.13", "port": 443, "protocol": "HTTP", "product": "Apache", "version": "2.4.41", "os_hint": "Ubuntu", "confidence": 0.9},
+    {"ip": "1.2.3.14", "port": 3306, "protocol": "MySQL", "product": "MySQL", "version": "5.7.42", "os_hint": "", "confidence": 0.9},
+    {"ip": "1.2.3.15", "port": 6379, "protocol": "Redis", "product": "Redis", "version": "", "os_hint": "", "confidence": 0.7},
+    {"ip": "1.2.3.16", "port": 21, "protocol": "FTP", "product": "vsFTPd", "version": "3.0.5", "os_hint": "", "confidence": 0.9},
+    {"ip": "1.2.3.17", "port": 8443, "protocol": "HTTP", "product": "nginx", "version": "1.25.3", "os_hint": "", "confidence": 0.9},
+    {"ip": "1.2.3.18", "port": 22, "protocol": "SSH", "product": "OpenSSH", "version": "4.3", "os_hint": "", "confidence": 0.95},
+    {"ip": "1.2.3.19", "port": 9999, "protocol": "TLS", "product": "", "version": "", "os_hint": "", "confidence": 0.6},
+    {"ip": "1.2.3.20", "port": 8888, "protocol": "HTTP", "product": "Microsoft-IIS", "version": "10.0", "os_hint": "", "confidence": 0.9},
+    {"ip": "1.2.3.21", "port": 6379, "protocol": "Redis", "product": "Redis", "version": "", "os_hint": "", "confidence": 0.7},
+    {"ip": "1.2.3.22", "port": 21, "protocol": "FTP", "product": "Pure-FTPd", "version": "", "os_hint": "", "confidence": 0.85},
+    {"ip": "1.2.3.23", "port": 12345, "protocol": "unknown", "product": "", "version": "", "os_hint": "", "confidence": 0},
+]
+
 (root / "rules").mkdir(exist_ok=True)
 (root / "testdata").mkdir(exist_ok=True)
 (root / "rules" / "rules.json").write_text(json.dumps(rules, indent=2) + "\n", encoding="utf-8")
 (root / "testdata" / "input.json").write_text(json.dumps(records, indent=2) + "\n", encoding="utf-8")
-print("wrote", len(rules), "rules and", len(records), "records")
+(root / "testdata" / "expected.json").write_text(json.dumps(expected, indent=2) + "\n", encoding="utf-8")
+print("wrote", len(rules), "rules,", len(records), "records, and", len(expected), "expected results")

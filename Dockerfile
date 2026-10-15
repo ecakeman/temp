@@ -1,13 +1,15 @@
-ARG GO_VERSION=1.22
+ARG GO_VERSION=1.27.2
 FROM golang:${GO_VERSION} AS build
 
 WORKDIR /src
+ARG TARGETOS
+ARG TARGETARCH
 COPY go.mod ./
 COPY cmd ./cmd
 COPY internal ./internal
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
+RUN CGO_ENABLED=0 GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH:-amd64} \
     go build -trimpath -ldflags="-s -w" -o /out/server ./cmd/server \
-    && CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
+    && CGO_ENABLED=0 GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH:-amd64} \
     go build -trimpath -ldflags="-s -w" -o /out/client ./cmd/client
 
 FROM scratch AS client

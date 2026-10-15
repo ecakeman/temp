@@ -108,7 +108,7 @@ func TestEngineEdges(t *testing.T) {
 		},
 		{
 			name:   "tls bytes",
-			banner: string([]byte{0x16, 0x03, 0x03, 0x00, 0x05}),
+			banner: string([]byte{0x16, 0x03, 0x03, 0x00, 0x04, 0x01, 0x00, 0x00, 0x00}),
 			port:   443,
 			want:   model.Result{Protocol: "TLS", Confidence: 0.6},
 		},

@@ -11,10 +11,39 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
         with:
-          go-version: "1.22"
+          go-version: "1.27.2"
       - name: gofmt
         run: test -z "$(gofmt -l .)"
       - name: test
         run: go test ./...
+      - name: race
+        run: go test -race ./...
       - name: vet
         run: go vet ./...
+
+  compose:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: compose config
+        run: docker compose config --quiet
+      - name: build, call, and check
+        run: |
+          set -euo pipefail
+          cleanup() {
+            docker compose down -v --remove-orphans
+          }
+          trap cleanup EXIT
+          docker compose up --build -d
+          cid="$(docker compose ps -q server)"
+          status=""
+          for _ in $(seq 1 30); do
+            status="$(docker inspect --format '{{.State.Health.Status}}' "$cid")"
+            if [ "$status" = "healthy" ]; then
+              break
+            fi
+            sleep 2
+          done
+          test "$status" = "healthy"
+          docker compose --profile client run --rm client > client-out.json
+          python3 scripts/check_results.py testdata/input.json testdata/expected.json client-out.json

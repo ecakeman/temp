@@ -34,16 +34,31 @@ jobs:
             docker compose down -v --remove-orphans
           }
           trap cleanup EXIT
-          docker compose up --build -d
+          docker compose --profile client build server client
+          docker compose up -d server
           cid="$(docker compose ps -q server)"
+          if [ -z "$cid" ]; then
+            echo "server container id is empty"
+            docker compose logs
+            exit 1
+          fi
           status=""
           for _ in $(seq 1 30); do
-            status="$(docker inspect --format '{{.State.Health.Status}}' "$cid")"
+            status="$(docker inspect --format '{{.State.Health.Status}}' "$cid" || true)"
             if [ "$status" = "healthy" ]; then
               break
             fi
+            if [ "$status" = "unhealthy" ]; then
+              echo "server became unhealthy"
+              docker compose logs
+              exit 1
+            fi
             sleep 2
           done
-          test "$status" = "healthy"
-          docker compose --profile client run --rm client > client-out.json
+          if [ "$status" != "healthy" ]; then
+            echo "server did not become healthy (status=${status})"
+            docker compose logs
+            exit 1
+          fi
+          docker compose --profile client run --rm -T client > client-out.json
           python3 scripts/check_results.py testdata/input.json testdata/expected.json client-out.json
